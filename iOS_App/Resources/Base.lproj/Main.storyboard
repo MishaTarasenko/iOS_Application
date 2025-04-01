@@ -93,7 +93,6 @@
                                 </tableViewCellContentView>
                                 <connections>
                                     <outlet property="postView" destination="uuf-9E-DNv" id="mdO-S9-WTT"/>
-                                    <segue destination="ryE-Oa-3Jn" kind="show" identifier="showDetail" id="0Lr-jW-exo"/>
                                 </connections>
                             </tableViewCell>
                         </prototypes>
@@ -107,11 +106,12 @@
                         <outlet property="bookmarkButton" destination="W4t-Ta-Bnx" id="0XE-QD-uqG"/>
                         <outlet property="nameLabel" destination="I6n-hV-8AL" id="ebX-sw-uwP"/>
                         <outlet property="titleFilterText" destination="WiB-FJ-PhP" id="bLP-7x-IcA"/>
+                        <segue destination="ryE-Oa-3Jn" kind="show" identifier="showDetail" id="8cR-yH-rlS"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="F7X-IP-p0z" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="992.53731343283573" y="894.50800915331797"/>
+            <point key="canvasLocation" x="1006" y="895"/>
         </scene>
         <!--Post Details View Controller-->
         <scene sceneID="Wsw-Nt-3rm">
@@ -142,7 +142,7 @@
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FvV-i7-IwD" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="1772" y="1492"/>
+            <point key="canvasLocation" x="1999" y="895"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="sWb-dK-cBy">

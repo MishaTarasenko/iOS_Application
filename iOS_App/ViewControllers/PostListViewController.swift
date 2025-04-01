@@ -13,9 +13,9 @@ class PostListViewController: UITableViewController {
     @IBOutlet private weak var nameLabel: UILabel!
     @IBOutlet private weak var titleFilterText: UITextField!
     @IBOutlet private weak var bookmarkButton: UIButton!
-    private var postService: PostService?
-    private var isSavedPosts: Bool = false
     private var titleFilter: String = ""
+    public var postService: PostService?
+    public var isSavedPosts: Bool = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -38,7 +38,7 @@ class PostListViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "PostTableViewCell", for: indexPath) as! PostTableViewCell
         let post = getPostByIndex(indexPath.row)
         
-        cell.setProperties(post: post, shareDelegate: self, redrowCellDelegate: self, savePostDelegate: postService)
+        cell.setProperties(post: post, shareDelegate: self, redrowCellDelegate: self, savePostDelegate: postService!, postDetailOpenerDelegate: self)
         return cell
     }
     
@@ -107,39 +107,5 @@ class PostListViewController: UITableViewController {
     
     @objc func dismissKeyboard() {
         view.endEditing(true)
-    }
-}
-
-extension PostListViewController: ShareDelegate {
-    func shareButtonWasPressed(_ view: PostView, viewController: UIActivityViewController) {
-        present(viewController, animated: true, completion: nil)
-    }
-}
-
-extension PostListViewController: RedrowCellDelegate {
-    func redrowCell(for post: Post) {
-        if isSavedPosts {
-            self.redrowTable()
-        } else {
-            if let index = postService!.posts.firstIndex(where: { $0.post == post.post }) {
-                let indexPath = IndexPath(row: index, section: 0)
-                tableView.reloadRows(at: [indexPath], with: .automatic)
-            }
-        }
-    }
-}
-
-extension PostListViewController: LoadNewPostsDelegate {
-    func redrowTable() {
-        DispatchQueue.main.async {
-            self.tableView.reloadData()
-        }
-    }
-}
-
-extension PostListViewController: UITextFieldDelegate {
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        return true
     }
 }

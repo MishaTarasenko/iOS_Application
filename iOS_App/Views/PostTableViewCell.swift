@@ -16,6 +16,7 @@ class PostTableViewCell: UITableViewCell {
         super.awakeFromNib()
         
         // Initialization code
+        selectionStyle = .none
         contentView.layoutMargins = .zero
         preservesSuperviewLayoutMargins = false
     }
@@ -31,10 +32,15 @@ class PostTableViewCell: UITableViewCell {
         postView.resetState()
     }
 
-    public func setProperties(post: Post, shareDelegate: ShareDelegate, redrowCellDelegate: RedrowCellDelegate?, savePostDelegate: SavePostDelegate?) {
+    public func setProperties(post: Post,
+                              shareDelegate: ShareDelegate,
+                              redrowCellDelegate: RedrowCellDelegate,
+                              savePostDelegate: SavePostDelegate,
+                              postDetailOpenerDelegate: PostDetailOpenerDelegate) {
         postView.setPropertiesForView(post: post, layoutStyle: .compact)
         postView.shareDelegate = shareDelegate
         postView.redrowCellDelegate = redrowCellDelegate
         postView.savePostDelegate = savePostDelegate
+        postView.postDetailOpenerDelegate = postDetailOpenerDelegate
     }
 }

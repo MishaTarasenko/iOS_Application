@@ -8,7 +8,7 @@
 import UIKit
 import SDWebImage
 
-class PostView: UIView {
+class PostView: UIView, UIGestureRecognizerDelegate {
     let kCONTENT_XIB_NAME = "PostView"
     
     @IBOutlet private weak var contentView: UIView!
@@ -30,6 +30,7 @@ class PostView: UIView {
     weak var shareDelegate: ShareDelegate?
     weak var redrowCellDelegate: RedrowCellDelegate?
     weak var savePostDelegate: SavePostDelegate?
+    weak var postDetailOpenerDelegate: PostDetailOpenerDelegate?
     private weak var post: Post?
     private var layoutStyle: LayoutStyleEnum?
     
@@ -54,6 +55,17 @@ class PostView: UIView {
         self.post = post
         self.layoutStyle = layoutStyle
         
+        self.isUserInteractionEnabled = true
+        postImage.isUserInteractionEnabled = true
+                
+        let singleTapGesture = UITapGestureRecognizer(target: self, action: #selector(handleSingleTap))
+        self.addGestureRecognizer(singleTapGesture)
+                
+        let doubleTapGesture = UITapGestureRecognizer(target: self, action: #selector(handleDoubleTap))
+        doubleTapGesture.numberOfTapsRequired = 2
+        postImage.addGestureRecognizer(doubleTapGesture)
+        singleTapGesture.require(toFail: doubleTapGesture)
+        
         if layoutStyle == .full {
             titleLabel.numberOfLines = 0
             initComponents()
@@ -72,29 +84,10 @@ class PostView: UIView {
         
         let thumbnailURLString = postData.thumbnail.replacingOccurrences(of: "&amp;", with: "&")
         //TO DO: переробити цей if else
-        if thumbnailURLString.hasPrefix("http") {
-                postImage.sd_setImage(
+        postImage.sd_setImage(
                     with: URL(string: thumbnailURLString),
-                    placeholderImage: UIImage(named: "white.jpeg"),
-                    options: [.retryFailed],
-                    completed: { [weak self] (image, error, cacheType, url) in
-                        guard let self = self else { return }
-                        if error != nil {
-                            if layoutStyle == .compact {
-                                self.setUpCompactViewWithoutImage()
-                            } else {
-                                self.setUpFullViewWithoutImage()
-                            }
-                        }
-                    }
+                    placeholderImage: UIImage(named: "white.jpeg")
                 )
-        } else {
-            if layoutStyle == .compact {
-                self.setUpCompactViewWithoutImage()
-            } else {
-                self.setUpFullViewWithoutImage()
-            }
-        }
         
         usernameLabel.text = "\(postData.author) • \(timeAgo(from: Date(timeIntervalSince1970: TimeInterval(postData.created_utc)))) • \(postData.domain)"
         titleLabel.text = postData.title
@@ -107,31 +100,9 @@ class PostView: UIView {
             bookmarkButton.setImage(UIImage(systemName: "bookmark.fill"), for: .normal)
         }
     }
-    
-    private func setUpCompactViewWithoutImage() {
-        postImage.isHidden = true
-        titleLabel.numberOfLines = 5
-        
-        imageHeightConstraint?.isActive = false
-
-        let ratingConstraint = ratingButton.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 14)
-        let commentsConstraint = commentsButton.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 14)
-        let shareConstraint = shareButton.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 14)
-        let heightConstraint = postImage.heightAnchor.constraint(equalToConstant: 0)
-        compactViewWithoutImageConstraints = [ratingConstraint, commentsConstraint, shareConstraint, heightConstraint]
-
-        NSLayoutConstraint.activate(compactViewWithoutImageConstraints)
-    }
 
     private func revertCompactViewChanges() {
         self.post = nil
-        postImage.isHidden = false
-        titleLabel.numberOfLines = 3
-        
-        imageHeightConstraint?.isActive = true
-        
-        NSLayoutConstraint.deactivate(compactViewWithoutImageConstraints)
-        compactViewWithoutImageConstraints.removeAll()
         bookmarkButton.setImage(UIImage(systemName: "bookmark"), for: .normal)
     }
     
@@ -155,6 +126,20 @@ class PostView: UIView {
     }
     
     @IBAction func bookmarkButtonWasClicked(_ sender: UIButton) {
+        savePost()
+    }
+    
+    @objc private func handleDoubleTap() {
+        showBookmarkAnimation {
+            self.savePost()
+        }
+    }
+    
+    @objc private func handleSingleTap() {
+        postDetailOpenerDelegate?.didRequestPostDetail(for: self)
+    }
+    
+    private func savePost() {
         if let isSaved = self.post?.saved, isSaved == true {
             self.post?.saved = false
             bookmarkButton.setImage(UIImage(systemName: "bookmark"), for: .normal)
@@ -178,17 +163,56 @@ class PostView: UIView {
         ratingButton.setTitle(nil, for: .normal)
         commentsButton.setTitle(nil, for: .normal)
     }
-}
-
-extension UIView
-{
-    func fixInView(_ container: UIView!) -> Void{
-        self.translatesAutoresizingMaskIntoConstraints = false;
-        self.frame = container.frame;
-        container.addSubview(self);
-        NSLayoutConstraint(item: self, attribute: .leading, relatedBy: .equal, toItem: container, attribute: .leading, multiplier: 1.0, constant: 0).isActive = true
-        NSLayoutConstraint(item: self, attribute: .trailing, relatedBy: .equal, toItem: container, attribute: .trailing, multiplier: 1.0, constant: 0).isActive = true
-        NSLayoutConstraint(item: self, attribute: .top, relatedBy: .equal, toItem: container, attribute: .top, multiplier: 1.0, constant: 0).isActive = true
-        NSLayoutConstraint(item: self, attribute: .bottom, relatedBy: .equal, toItem: container, attribute: .bottom, multiplier: 1.0, constant: 0).isActive = true
+    
+    private func showBookmarkAnimation(completion: (() -> Void)? = nil) {
+        guard let bookmarkImg = bookmarkImage() else { return }
+        
+        let shapeLayer = CALayer()
+        shapeLayer.contents = bookmarkImg.cgImage
+        shapeLayer.opacity = 0
+        
+        let layerWidth: CGFloat = 30
+        let layerHeight: CGFloat = 40
+        let centerPoint = CGPoint(x: postImage.bounds.midX, y: postImage.bounds.midY)
+        shapeLayer.frame = CGRect(
+            x: centerPoint.x - layerWidth / 2,
+            y: centerPoint.y - layerHeight / 2,
+            width: layerWidth,
+            height: layerHeight
+        )
+        
+        postImage.layer.addSublayer(shapeLayer)
+        
+        let fadeAnimation = CABasicAnimation(keyPath: "opacity")
+        fadeAnimation.fromValue = 0
+        fadeAnimation.toValue = 1
+        fadeAnimation.duration = 0.7
+        fadeAnimation.autoreverses = true
+        fadeAnimation.fillMode = .forwards
+        fadeAnimation.isRemovedOnCompletion = false
+        shapeLayer.add(fadeAnimation, forKey: "fadeInOut")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            shapeLayer.removeFromSuperlayer()
+            completion?()
+        }
+    }
+    
+    private func bookmarkImage() -> UIImage? {
+        let size = CGSize(width: 30, height: 40)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { context in
+            let bookmarkPath = UIBezierPath()
+            bookmarkPath.move(to: CGPoint(x: 0, y: 0))
+            bookmarkPath.addLine(to: CGPoint(x: 0, y: 40))
+            bookmarkPath.addLine(to: CGPoint(x: 15, y: 25))
+            bookmarkPath.addLine(to: CGPoint(x: 30, y: 40))
+            bookmarkPath.addLine(to: CGPoint(x: 30, y: 0))
+            bookmarkPath.close()
+            
+            UIColor.systemBlue.setFill()
+            bookmarkPath.fill()
+        }
+        return image
     }
 }
