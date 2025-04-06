@@ -127,11 +127,13 @@ class PostView: UIView, UIGestureRecognizerDelegate {
     
     @IBAction func bookmarkButtonWasClicked(_ sender: UIButton) {
         savePost()
+        redrowCellDelegate?.redrowCell(for: post!)
     }
     
     @objc private func handleDoubleTap() {
+        self.savePost()
         showBookmarkAnimation {
-            self.savePost()
+            self.redrowCellDelegate?.redrowCell(for: self.post!)
         }
     }
     
@@ -143,12 +145,10 @@ class PostView: UIView, UIGestureRecognizerDelegate {
         if let isSaved = self.post?.saved, isSaved == true {
             self.post?.saved = false
             bookmarkButton.setImage(UIImage(systemName: "bookmark"), for: .normal)
-            redrowCellDelegate?.redrowCell(for: post!)
             savePostDelegate?.savePost(for: post!, isSave: false)
         } else {
             self.post?.saved = true
             bookmarkButton.setImage(UIImage(systemName: "bookmark.fill"), for: .normal)
-            redrowCellDelegate?.redrowCell(for: post!)
             savePostDelegate?.savePost(for: post!, isSave: true)
         }
     }
